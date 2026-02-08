@@ -71,11 +71,3 @@ class BookDeleteView(generics.DestroyAPIView):
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]
 
-
-class AuthorDetailView(generics.RetrieveAPIView):
-    """DetailView for retrieving a single Author instance."""
-    queryset = Author.objects.all()
-    serializer_class = AuthorSerializer
-    permission_classes = [permissions.AllowAny]
-
-    lookup_field = 'pk'
