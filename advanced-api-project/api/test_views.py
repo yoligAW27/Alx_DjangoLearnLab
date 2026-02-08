@@ -171,7 +171,10 @@ class BookAPITestCase(APITestCase):
         Test creating a book with authentication.
         Should return status 201 and create the book.
         """
-        self.client.force_authenticate(user=self.user)
+        # USE client.login() instead of force_authenticate()
+        login_success = self.client.login(username='testuser', password='testpass123')
+        self.assertTrue(login_success)
+        
         url = reverse('book-create')
         data = {
             'title': 'New Test Book',
@@ -183,13 +186,18 @@ class BookAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['title'], 'New Test Book')
         self.assertEqual(Book.objects.count(), 5)  # Should have 5 books now
+        
+        # Logout after test
+        self.client.logout()
     
     def test_create_book_with_future_year(self):
         """
         Test creating a book with a future publication year.
         Should return status 400 due to validation.
         """
-        self.client.force_authenticate(user=self.user)
+        # USE client.login()
+        self.client.login(username='testuser', password='testpass123')
+        
         url = reverse('book-create')
         data = {
             'title': 'Future Book',
@@ -200,6 +208,8 @@ class BookAPITestCase(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('Publication year cannot be in the future', str(response.data))
+        
+        self.client.logout()
     
     # ============================================
     # TEST UPDATE VIEW (PUT/PATCH /api/books/<id>/update/)
@@ -221,7 +231,9 @@ class BookAPITestCase(APITestCase):
         Test updating a book with authentication.
         Should return status 200 and update the book.
         """
-        self.client.force_authenticate(user=self.user)
+        # USE client.login()
+        self.client.login(username='testuser', password='testpass123')
+        
         url = reverse('book-update', kwargs={'pk': self.book1.id})
         data = {
             'title': 'Updated Harry Potter Title',
@@ -236,6 +248,8 @@ class BookAPITestCase(APITestCase):
         # Verify the update in database
         self.book1.refresh_from_db()
         self.assertEqual(self.book1.title, 'Updated Harry Potter Title')
+        
+        self.client.logout()
     
     # ============================================
     # TEST DELETE VIEW (DELETE /api/books/<id>/delete/)
@@ -257,12 +271,50 @@ class BookAPITestCase(APITestCase):
         Test deleting a book with authentication.
         Should return status 204 and delete the book.
         """
-        self.client.force_authenticate(user=self.user)
+        # USE client.login()
+        self.client.login(username='testuser', password='testpass123')
+        
         url = reverse('book-delete', kwargs={'pk': self.book1.id})
         response = self.client.delete(url)
         
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Book.objects.count(), 3)  # Should have 3 books now
+        
+        self.client.logout()
+    
+    # ============================================
+    # TEST PERMISSIONS WITH DIFFERENT USER TYPES
+    # ============================================
+    
+    def test_admin_user_permissions(self):
+        """
+        Test that admin users can perform all operations.
+        """
+        # Admin login
+        self.client.login(username='admin', password='adminpass123')
+        
+        # Test create
+        url = reverse('book-create')
+        data = {
+            'title': 'Admin Created Book',
+            'publication_year': 2023,
+            'author': self.author1.id
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Test update
+        update_url = reverse('book-update', kwargs={'pk': self.book2.id})
+        update_data = {'title': 'Admin Updated Title'}
+        response = self.client.patch(update_url, update_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Test delete
+        delete_url = reverse('book-delete', kwargs={'pk': self.book3.id})
+        response = self.client.delete(delete_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        
+        self.client.logout()
     
     # ============================================
     # TEST COMBINED FILTERING, SEARCHING, ORDERING
@@ -287,6 +339,34 @@ class BookAPITestCase(APITestCase):
         # Check ordering (newest first)
         years = [book['publication_year'] for book in response.data]
         self.assertEqual(years, [1998, 1997])
+    
+    # ============================================
+    # TEST DATABASE ISOLATION (Separate test database)
+    # ============================================
+    
+    def test_database_isolation(self):
+        """
+        Test that test database is separate from development database.
+        Operations in tests should not affect other tests.
+        """
+        # Count books at start of this test
+        initial_count = Book.objects.count()
+        
+        # Create a book in this test
+        self.client.login(username='testuser', password='testpass123')
+        url = reverse('book-create')
+        data = {
+            'title': 'Isolation Test Book',
+            'publication_year': 2023,
+            'author': self.author1.id
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Should have one more book now
+        self.assertEqual(Book.objects.count(), initial_count + 1)
+        
+        self.client.logout()
 
 
 class AuthorAPITestCase(APITestCase):
@@ -328,4 +408,4 @@ class AuthorAPITestCase(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], 'Test Author 1')
-        self.assertEqual(len(response.data['books']), 2)  
+        self.assertEqual(len(response.data['books']), 2)  # Should have 2 books
