@@ -1,8 +1,38 @@
-<h2>Login</h2>
-<form method="POST">
-    {% csrf_token %}
-    <p>Username: <input type="text" name="username"></p>
-    <p>Password: <input type="password" name="password"></p>
-    <button type="submit">Login</button>
-</form>
-<a href="{% url 'register' %}">Register</a>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login - Django Blog{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>Login</h2>
+    
+    <form method="POST">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="id_username">Username</label>
+            <input type="text" name="username" id="id_username" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_password">Password</label>
+            <input type="password" name="password" id="id_password" required>
+        </div>
+        
+        <button type="submit" class="btn-primary">Login</button>
+    </form>
+    
+    <div class="auth-links">
+        <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/login.js' %}"></script>
+{% endblock %}
