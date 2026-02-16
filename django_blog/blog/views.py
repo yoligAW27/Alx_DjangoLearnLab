@@ -1,6 +1,3 @@
-from django.shortcuts import render
-
-# Create your views here.
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
@@ -192,3 +189,4 @@ class PostByTagListView(ListView):  # <-- renamed to match checker
         context = super().get_context_data(**kwargs)
         context['tag'] = self.tag
         return context
+
