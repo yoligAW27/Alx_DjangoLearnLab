@@ -1,0 +1,8 @@
+<h2>Profile</h2>
+<p>Username: {{ request.user.username }}</p>
+<form method="POST">
+    {% csrf_token %}
+    <p>Email: <input type="email" name="email" value="{{ request.user.email }}"></p>
+    <button type="submit">Update</button>
+</form>
+<a href="{% url 'logout' %}">Logout</a>
