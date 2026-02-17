@@ -1,4 +1,10 @@
-<form method="GET" action="{% url 'search-posts' %}">
-    <input type="text" name="q" placeholder="Search posts..." value="{{ request.GET.q }}">
-    <button type="submit">Search</button>
-</form>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Django Blog</title>
+</head>
+<body>
+    <h1>My Blog</h1>
+    {% block content %}{% endblock %}
+</body>
+</html>
